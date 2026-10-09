@@ -9,6 +9,7 @@
 LOG_MODULE_REGISTER(ptp_clock, CONFIG_PTP_LOG_LEVEL);
 
 #include <inttypes.h>
+#include <math.h>
 #include <stdbool.h>
 #include <stdlib.h>
 #include <string.h>
@@ -87,6 +88,7 @@ struct ptp_clock {
 	uint8_t sync_servo_lock_samples;
 	uint8_t sync_servo_outlier_samples;
 	bool sync_servo_locked;
+	int8_t sync_log_interval;
 };
 
 __maybe_unused static struct ptp_clock ptp_clk = { 0 };
@@ -357,6 +359,7 @@ const struct ptp_clock *ptp_clock_init(void)
 	precision_pi_set_limits(&ptp_clk.pi,
 				(double)CONFIG_PRECISION_TIMING_PI_INTEGRAL_LIMIT_PPM * 1000.0,
 				(double)CONFIG_PRECISION_TIMING_PI_OUTPUT_LIMIT_PPM * 1000.0);
+	ptp_clk.sync_log_interval = CONFIG_PTP_SYNC_LOG_INTERVAL;
 
 	ret = zvfs_eventfd(0, ZVFS_EFD_NONBLOCK);
 	if (ret < 0) {
@@ -628,6 +631,11 @@ static void clock_servo_update_lock(int64_t offset)
 	}
 }
 
+void ptp_clock_sync_interval_set(int8_t log_sync_interval)
+{
+	ptp_clk.sync_log_interval = log_sync_interval;
+}
+
 static uint64_t clock_abs_delta_u64(uint64_t a, uint64_t b)
 {
 	return a >= b ? a - b : b - a;
@@ -745,7 +753,12 @@ static __noinline void clock_adjust_rate(const struct precision_clock *precision
 
 	ptp_clk.sync_servo_outlier_samples = 0;
 
-	ppb = precision_pi_update(&ptp_clk.pi, -offset);
+	if (IS_ENABLED(CONFIG_PTP_SERVO_SCALE_GAINS_BY_SYNC_INTERVAL)) {
+		ppb = precision_pi_update_interval(&ptp_clk.pi, -offset,
+						   ldexp(1.0, ptp_clk.sync_log_interval));
+	} else {
+		ppb = precision_pi_update(&ptp_clk.pi, -offset);
+	}
 	ret = precision_clock_ppb_to_scaled_ppm(ppb, &scaled_ppm);
 	if (ret < 0) {
 		LOG_WRN_RATELIMIT("PTP PI output is out of range (ppb=%f), resetting servo",

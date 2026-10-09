@@ -615,6 +615,26 @@ ZTEST(ptp_clock_wakeup, test_synchronize_applies_pi_rate_adjustment)
 	zassert_true(fake_ptp_clock_last_rate_ratio < 1.0, "positive offset should slow clock");
 }
 
+ZTEST(ptp_clock_wakeup, test_pi_gains_follow_sync_interval)
+{
+	const struct precision_clock *precision_clk =
+		precision_clock_ptp_get(&ptp_clk.precision_clock);
+	const double kp = (double)CONFIG_PRECISION_TIMING_PI_KP / 1000.0;
+	const double ki = (double)CONFIG_PRECISION_TIMING_PI_KI / 1000.0;
+	const double scale = IS_ENABLED(CONFIG_PTP_SERVO_SCALE_GAINS_BY_SYNC_INTERVAL) ? 4.0 : 1.0;
+	const int64_t offset = 1000;
+	double expected_ppb;
+
+	/* A Sync interval of 0.25 s scales the gains by 4 when scaling is enabled */
+	ptp_clock_sync_interval_set(-2);
+	clock_adjust_rate(precision_clk, offset);
+
+	expected_ppb = -(kp + ki) * scale * (double)offset;
+	zassert_equal(fake_ptp_clock_rate_adjust_calls, 1, "rate adjust should be applied");
+	zassert_within(fake_ptp_clock_last_rate_ratio, 1.0 + expected_ppb * 1.0e-9, 1.0e-10,
+		       "rate does not follow the Sync interval setting");
+}
+
 ZTEST(ptp_clock_wakeup, test_synchronize_resets_servo_after_rate_adjust_failure)
 {
 	ptp_clk.phc = DEVICE_GET(fake_phc);

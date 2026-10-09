@@ -245,6 +245,8 @@ static void port_synchronize(struct ptp_port *port,
 	t2 = ingress_ts.second * NSEC_PER_SEC + ingress_ts.nanosecond;
 	t1c = t1 + (correction1 >> 16) + (correction2 >> 16);
 
+	ptp_clock_sync_interval_set(port->port_ds.log_sync_interval);
+
 	if (port->port_ds.delay_mechanism == PTP_DM_P2P) {
 		ptp_clock_synchronize_with_delay(t2, t1c, port->port_ds.mean_link_delay,
 						 ingress_ts_valid);

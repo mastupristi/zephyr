@@ -380,6 +380,19 @@ config PTP_SERVO_OUTLIER_THRESHOLD_MS
 	  While the servo is locked, samples with a larger offset are rejected,
 	  and two consecutive outliers reset the servo.
 
+config PTP_SERVO_SCALE_GAINS_BY_SYNC_INTERVAL
+	bool "Scale the PI gains by the Sync interval"
+	help
+	  The PI gains of PRECISION_TIMING_PI_KP and PRECISION_TIMING_PI_KI
+	  are taken as the gains for a Sync interval of one second, and are
+	  divided by the Sync interval of the time transmitter. The loop then
+	  keeps its stability and damping for any Sync interval. Without this
+	  option the gains are used as they are for every Sync message, so the
+	  loop gets slower and less damped with a shorter Sync interval.
+
+	  The Sync interval is taken from the multicast Sync messages. Until
+	  one is received, PTP_SYNC_LOG_INTERVAL is used.
+
 config PTP_DISABLED_PRESENT
 	bool
 	default y

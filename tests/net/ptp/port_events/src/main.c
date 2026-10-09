@@ -52,6 +52,7 @@ static int management_process_calls;
 static int timestamp_register_calls;
 static int timestamp_unregister_calls;
 static int clock_sync_calls;
+static int8_t last_sync_log_interval;
 static int clock_sync_with_delay_calls;
 static int clock_delay_calls;
 static int clock_pdelay_calls;
@@ -217,6 +218,11 @@ const struct ptp_current_ds *ptp_clock_current_ds(void)
 const struct ptp_time_prop_ds *ptp_clock_time_prop_ds(void)
 {
 	return &fake_time_prop_ds;
+}
+
+void ptp_clock_sync_interval_set(int8_t log_sync_interval)
+{
+	last_sync_log_interval = log_sync_interval;
 }
 
 void ptp_clock_synchronize(uint64_t ingress, uint64_t egress, bool ingress_ts_valid)
@@ -547,6 +553,7 @@ static void reset_fakes(void)
 	timestamp_register_calls = 0;
 	timestamp_unregister_calls = 0;
 	clock_sync_calls = 0;
+	last_sync_log_interval = 0;
 	clock_sync_with_delay_calls = 0;
 	clock_delay_calls = 0;
 	clock_pdelay_calls = 0;
@@ -1091,6 +1098,7 @@ ZTEST(ptp_port_events, test_event_gen_sync_follow_up_pair_synchronizes)
 		      "Follow_Up should not change port event state");
 	zassert_is_null(port.last_sync_fup, "matched Sync/Follow_Up should be consumed");
 	zassert_equal(clock_sync_calls, 1, "clock synchronization not requested");
+	zassert_equal(last_sync_log_interval, -1, "Sync interval not passed to the clock");
 	stop_port_timers(&port);
 }
 
