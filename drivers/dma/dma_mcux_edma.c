@@ -62,6 +62,8 @@ struct dma_mcux_edma_config {
 	bool channel_preemption;
 #endif
 	struct reset_dt_spec reset;
+	/* From nxp,no-halt-on-error: do not halt the eDMA on a channel error */
+	bool no_halt_on_error;
 	void (*irq_config_func)(const struct device *dev);
 	edma_tcd_t (*tcdpool)[CONFIG_DMA_TCD_QUEUE_SIZE];
 	/* Bit n set: channel n is not in dma-channel-mask, the driver must not use it */
@@ -1306,6 +1308,13 @@ static int dma_mcux_edma_init(const struct device *dev)
 #endif
 
 	EDMA_GetDefaultConfig(&userConfig);
+	/*
+	 * The HAL default enables halt-on-error: an error on any channel then
+	 * halts the service of all channels until software clears HALT.
+	 */
+	if (config->no_halt_on_error) {
+		userConfig.enableHaltOnError = false;
+	}
 	EDMA_Init(DEV_BASE(dev), &userConfig);
 #ifdef CONFIG_DMA_MCUX_EDMA_V3
 	/* Channel linking available and will be controlled by each channel's link settings */
@@ -1517,6 +1526,7 @@ static int dma_mcux_edma_init(const struct device *dev)
 		DMA_MCUX_EDMA_CHANNEL_GAP(n)					\
 		DMA_MCUX_EDMA_PRIORITIES_INIT(n)				\
 		.reset = RESET_DT_SPEC_INST_GET_OR(n, {0}),			\
+		.no_halt_on_error = DT_INST_PROP(n, nxp_no_halt_on_error),	\
 		.tcdpool = dma_tcdpool##n,					\
 		.reserved_channel_mask = DMA_MCUX_EDMA_RESERVED_MASK(n),	\
 	};									\
