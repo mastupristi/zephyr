@@ -499,6 +499,14 @@ static void dma_mcux_edma_error_irq_handler(const struct device *dev)
 	uint32_t flags;
 
 	for (uint32_t i = 0; i < (uint32_t)DEV_CFG(dev)->dma_channels; i++) {
+		/*
+		 * The owner of a reserved channel clears its error flag. If only a
+		 * reserved channel has an error, HALT also stays for its owner.
+		 */
+		if (!dma_mcux_edma_channel_is_usable(dev, i)) {
+			continue;
+		}
+
 		hw_channel = dma_mcux_edma_add_channel_gap(dev, i);
 		flags = EDMA_GetChannelStatusFlags(DEV_BASE(dev), hw_channel);
 		if ((flags & kEDMA_ErrorFlag) == 0U) {
