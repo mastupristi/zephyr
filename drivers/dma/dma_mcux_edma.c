@@ -1158,6 +1158,7 @@ static int dma_mcux_edma_configure(const struct device *dev, uint32_t channel,
 static int dma_mcux_edma_start(const struct device *dev, uint32_t channel)
 {
 	if (!dma_mcux_edma_channel_is_usable(dev, channel)) {
+		LOG_ERR("DMA channel %d is out of range or reserved", channel);
 		return -EINVAL;
 	}
 
@@ -1200,6 +1201,7 @@ static int dma_mcux_edma_stop(const struct device *dev, uint32_t channel)
 	uint32_t hw_channel;
 
 	if (!dma_mcux_edma_channel_is_usable(dev, channel)) {
+		LOG_ERR("DMA channel %d is out of range or reserved", channel);
 		return -EINVAL;
 	}
 
@@ -1223,6 +1225,7 @@ static int dma_mcux_edma_stop(const struct device *dev, uint32_t channel)
 static int dma_mcux_edma_suspend(const struct device *dev, uint32_t channel)
 {
 	if (!dma_mcux_edma_channel_is_usable(dev, channel)) {
+		LOG_ERR("DMA channel %d is out of range or reserved", channel);
 		return -EINVAL;
 	}
 
@@ -1244,6 +1247,7 @@ static int dma_mcux_edma_suspend(const struct device *dev, uint32_t channel)
 static int dma_mcux_edma_resume(const struct device *dev, uint32_t channel)
 {
 	if (!dma_mcux_edma_channel_is_usable(dev, channel)) {
+		LOG_ERR("DMA channel %d is out of range or reserved", channel);
 		return -EINVAL;
 	}
 
@@ -1408,6 +1412,7 @@ static int dma_mcux_edma_reload(const struct device *dev, uint32_t channel,
 	int ret = 0;
 
 	if (!dma_mcux_edma_channel_is_usable(dev, channel)) {
+		LOG_ERR("DMA channel %d is out of range or reserved", channel);
 		return -EINVAL;
 	}
 
@@ -1464,6 +1469,7 @@ static int dma_mcux_edma_get_status(const struct device *dev, uint32_t channel,
 				    struct dma_status *status)
 {
 	if (!dma_mcux_edma_channel_is_usable(dev, channel)) {
+		LOG_ERR("DMA channel %d is out of range or reserved", channel);
 		return -EINVAL;
 	}
 
