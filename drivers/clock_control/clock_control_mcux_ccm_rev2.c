@@ -18,6 +18,22 @@
 #include <zephyr/logging/log.h>
 LOG_MODULE_REGISTER(clock_control);
 
+#if DT_HAS_COMPAT_STATUS_OKAY(nxp_mcux_i2s)
+/*
+ * The SAI cases select the clock root with the SAI instance
+ * (kCLOCK_Root_Sai1 + instance). Stop the build if the HAL does not
+ * define the SAI roots in sequence.
+ */
+BUILD_ASSERT(kCLOCK_Root_Sai2 == kCLOCK_Root_Sai1 + 1,
+	     "SAI clock roots are not consecutive in the HAL");
+BUILD_ASSERT(kCLOCK_Root_Sai3 == kCLOCK_Root_Sai1 + 2,
+	     "SAI clock roots are not consecutive in the HAL");
+#if defined(CONFIG_SOC_SERIES_IMXRT11XX) || defined(CONFIG_SOC_SERIES_IMXRT118X)
+BUILD_ASSERT(kCLOCK_Root_Sai4 == kCLOCK_Root_Sai1 + 3,
+	     "SAI clock roots are not consecutive in the HAL");
+#endif
+#endif
+
 #if defined(CONFIG_SOC_SERIES_IMXRT11XX)
 /*
  * The RT11xx MCUX clock table maps MIC root mux slot 6 to Audio PLL output.
